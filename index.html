@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
@@ -11,105 +11,83 @@
     <h1>IDT Personel Sistemi</h1>
 
     <nav class="tabs">
-      <button class="tab active" data-tab="tab-oyunlar">Oyunlar</button>
-      <button class="tab" data-tab="tab-kisiler">Kişiler</button>
-      <button class="tab" data-tab="tab-grafikler">Grafikler</button>
-
-      <div class="right">
-        <button id="btnNotifs" class="notifs">
-          🔔 <span id="notifBadge" class="badge hidden">0</span>
-        </button>
-        <button id="btnReload" class="ghost">Yenile</button>
-      </div>
+      <button class="tab active" data-tab="oyunlar">Oyunlar</button>
+      <button class="tab" data-tab="kisiler">Kişiler</button>
+      <button class="tab" data-tab="grafikler">Grafikler</button>
     </nav>
   </header>
 
-  <main class="wrap">
-    <!-- OYUNLAR -->
-    <section id="tab-oyunlar" class="panel">
-      <div class="panelHead">
-        <h2>Oyunlar</h2>
-        <div id="status" class="status">Hazır.</div>
-      </div>
-
-      <div class="grid">
-        <aside class="card listCard" id="leftPane">
-          <div class="cardTitle">Oyun Listesi</div>
-          <input id="qOyun" class="input" placeholder="Oyun ara..." />
-          <div id="oyunList" class="list"></div>
-        </aside>
-
-        <section class="card detailCard" id="rightPane">
-          <div class="detailTop">
-            <div class="cardTitle">Detay</div>
-
-            <div class="detailBtns">
-              <button id="btnBack" class="ghost hidden">← Geri</button>
-              <button id="btnCopy" class="ghost" disabled>Kopyala (Excel)</button>
-              <button id="btnTsv" class="ghost" disabled>İndir (TSV)</button>
-            </div>
-          </div>
-
-          <div id="detail" class="detail">
-            Soldan bir oyun seç.
-          </div>
-        </section>
-      </div>
-    </section>
-
-   <!-- KİŞİLER -->
-<section id="tab-kisiler" class="panel hidden">
-  <div class="panelHead">
-    <h2>Kişiler</h2>
-    <div class="status muted">Aynı sheetten üretilir.</div>
-  </div>
-
-  <div class="grid">
-    <aside class="card listCard" id="leftPanePeople">
-      <div class="cardTitle">Kişi Listesi</div>
-      <input id="qKisi" class="input" placeholder="Kişi ara..." />
-      <div id="kisiList" class="list"></div>
-    </aside>
-
-    <section class="card detailCard" id="rightPanePeople">
-      <div class="detailTop">
-        <div class="cardTitle">Detay</div>
-        <div class="detailBtns">
-          <button id="btnCopyPerson" class="ghost" disabled>Kopyala (Excel)</button>
-          <button id="btnTsvPerson" class="ghost" disabled>İndir (TSV)</button>
-        </div>
-      </div>
-
-      <div id="personDetail" class="detail">
-        Soldan bir kişi seç.
-      </div>
-    </section>
-  </div>
-</section>
-
-
-    <!-- GRAFİKLER -->
-    <section id="tab-grafikler" class="panel hidden">
-      <div class="card">
-        <div class="cardTitle">Grafikler</div>
-        <div class="muted">Buraya grafikler ekranını sonra ekleyeceğiz.</div>
-      </div>
-    </section>
-  </main>
-
-  <!-- Bildirim Modal -->
-  <div id="notifModal" class="modal hidden">
-    <div class="modalBox">
-      <div class="modalHead">
-        <div class="cardTitle">Bildirimler</div>
-        <button id="btnCloseNotifs" class="ghost">Kapat</button>
-      </div>
-      <div id="notifList" class="notifList"></div>
-      <div class="modalFoot">
-        <button id="btnClearNotifs" class="ghost">Temizle</button>
+  <!-- OYUNLAR -->
+  <section id="tab-oyunlar" class="panel">
+    <div class="panelHead">
+      <h2>Oyunlar</h2>
+      <div class="panelActions">
+        <button id="btnReload" class="ghost">Yenile</button>
       </div>
     </div>
-  </div>
+
+    <div id="status" class="status muted">Hazır.</div>
+
+    <div class="grid">
+      <aside class="card listCard" id="leftPaneGames">
+        <div class="cardTitle">Oyun Listesi</div>
+        <input id="qOyun" class="input" placeholder="Oyun ara..." />
+        <div id="oyunList" class="list"></div>
+      </aside>
+
+      <section class="card detailCard" id="rightPaneGames">
+        <div class="detailTop">
+          <div class="cardTitle">Detay</div>
+          <div class="detailBtns">
+            <button id="btnCopyGame" class="ghost" disabled>Kopyala (Excel)</button>
+            <button id="btnTsvGame" class="ghost" disabled>İndir (TSV)</button>
+          </div>
+        </div>
+        <div id="gameDetail" class="detail">Soldan bir oyun seç.</div>
+      </section>
+    </div>
+  </section>
+
+  <!-- KİŞİLER -->
+  <section id="tab-kisiler" class="panel hidden">
+    <div class="panelHead">
+      <h2>Kişiler</h2>
+      <div class="status muted">Aynı sheetten üretilir.</div>
+    </div>
+
+    <div class="grid">
+      <aside class="card listCard" id="leftPanePeople">
+        <div class="cardTitle">Kişi Listesi</div>
+        <input id="qKisi" class="input" placeholder="Kişi ara..." />
+        <div id="kisiList" class="list"></div>
+      </aside>
+
+      <section class="card detailCard" id="rightPanePeople">
+        <div class="detailTop">
+          <div class="cardTitle">Detay</div>
+          <div class="detailBtns">
+            <button id="btnCopyPerson" class="ghost" disabled>Kopyala (Excel)</button>
+            <button id="btnTsvPerson" class="ghost" disabled>İndir (TSV)</button>
+          </div>
+        </div>
+
+        <div id="personDetail" class="detail">
+          Soldan bir kişi seç.
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <!-- GRAFİKLER -->
+  <section id="tab-grafikler" class="panel hidden">
+    <div class="panelHead">
+      <h2>Grafikler</h2>
+      <div class="status muted">Sonra ekleyeceğiz.</div>
+    </div>
+    <div class="card">
+      <div class="detail">Buraya grafikler gelecek.</div>
+    </div>
+  </section>
 
   <script src="app.js"></script>
 </body>
