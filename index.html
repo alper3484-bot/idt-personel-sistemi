@@ -4,34 +4,115 @@
   <meta charset="UTF-8" />
   <title>IDT Personel Sistemi</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
       margin: 0;
-      padding: 40px;
-    }
-    h1 {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f4f6f8;
       color: #222;
     }
+
+    header {
+      background: #111827;
+      color: #fff;
+      padding: 16px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    nav {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    nav button {
+      background: #1f2933;
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    nav button.active {
+      background: #2563eb;
+    }
+
+    main {
+      padding: 16px;
+    }
+
     .box {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      max-width: 600px;
-      margin: auto;
-      box-shadow: 0 10px 30px rgba(0,0,0,.1);
+      background: #fff;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+
+    .hidden {
+      display: none;
     }
   </style>
 </head>
+
 <body>
 
-  <div class="box">
-    <h1>🎭 İzmir Devlet Tiyatrosu</h1>
-    <p><strong>IDT Personel Dağılım Sistemi</strong></p>
-    <p>Site başarıyla çalışıyor.</p>
-    <p>Bir sonraki adım: Google Sheets verisi bağlamak.</p>
+<header>
+  <h1>IDT – Personel Dağılım Sistemi</h1>
+
+  <nav>
+    <button class="active" onclick="showTab('panel')">Panel</button>
+    <button onclick="showTab('oyunlar')">Oyunlar</button>
+    <button onclick="showTab('figurasyon')">Figüranlar</button>
+    <button onclick="showTab('grafikler')">Grafikler</button>
+  </nav>
+</header>
+
+<main>
+  <div id="panel" class="box">
+    <h2>Panel</h2>
+    <p>✔ Sistem çalışıyor</p>
+    <p>✔ GitHub Pages aktif</p>
   </div>
+
+  <div id="oyunlar" class="box hidden">
+    <h2>Oyunlar</h2>
+    <p>Buraya oyun listesi gelecek.</p>
+  </div>
+
+  <div id="figurasyon" class="box hidden">
+    <h2>Figüranlar</h2>
+    <p>Buraya figüran listesi + Excel indirme gelecek.</p>
+  </div>
+
+  <div id="grafikler" class="box hidden">
+    <h2>Grafikler</h2>
+    <p>Buraya grafikler gelecek.</p>
+  </div>
+</main>
+
+<script>
+  function showTab(id) {
+    document.querySelectorAll('main .box').forEach(box => {
+      box.classList.add('hidden');
+    });
+
+    document.getElementById(id).classList.remove('hidden');
+
+    document.querySelectorAll('nav button').forEach(btn => {
+      btn.classList.remove('active');
+    });
+
+    event.target.classList.add('active');
+  }
+</script>
 
 </body>
 </html>
