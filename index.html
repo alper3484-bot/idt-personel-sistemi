@@ -4,74 +4,90 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>IDT Personel Sistemi</title>
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="top">
     <h1>IDT Personel Sistemi</h1>
 
     <nav class="tabs">
-      <button class="tab active" data-tab="games">Oyunlar</button>
-      <button class="tab" data-tab="people">Kişiler</button>
-      <button class="tab" data-tab="charts">Grafikler</button>
+      <button class="tab active" data-tab="tab-oyunlar">Oyunlar</button>
+      <button class="tab" data-tab="tab-kisiler">Kişiler</button>
+      <button class="tab" data-tab="tab-grafikler">Grafikler</button>
+
+      <div class="right">
+        <button id="btnNotifs" class="notifs">
+          🔔 <span id="notifBadge" class="badge hidden">0</span>
+        </button>
+        <button id="btnReload" class="ghost">Yenile</button>
+      </div>
     </nav>
   </header>
 
   <main class="wrap">
     <!-- OYUNLAR -->
-    <section class="panel" id="tab-games">
-      <div class="row row-between">
+    <section id="tab-oyunlar" class="panel">
+      <div class="panelHead">
         <h2>Oyunlar</h2>
-        <button id="btnRefresh" class="btn">Yenile</button>
+        <div id="status" class="status">Hazır.</div>
       </div>
 
-      <div id="status" class="status">Hazır.</div>
-
       <div class="grid">
-        <aside class="card">
-          <div class="card-head">
-            <h3>Oyun Listesi</h3>
-          </div>
-
-          <input id="gameSearch" class="input" placeholder="Oyun ara..." />
-          <div id="gameList" class="list"></div>
+        <aside class="card listCard" id="leftPane">
+          <div class="cardTitle">Oyun Listesi</div>
+          <input id="qOyun" class="input" placeholder="Oyun ara..." />
+          <div id="oyunList" class="list"></div>
         </aside>
 
-        <section class="card" id="detailCard">
-          <div class="card-head row row-between">
-            <h3 id="detailTitle">Detay</h3>
+        <section class="card detailCard" id="rightPane">
+          <div class="detailTop">
+            <div class="cardTitle">Detay</div>
 
-            <div class="actions">
-              <button id="btnBack" class="btn btn-ghost hidden">← Geri</button>
-              <button id="btnCopy" class="btn">Kopyala (Excel)</button>
-              <button id="btnDownload" class="btn">İndir (TSV)</button>
+            <div class="detailBtns">
+              <button id="btnBack" class="ghost hidden">← Geri</button>
+              <button id="btnCopy" class="ghost" disabled>Kopyala (Excel)</button>
+              <button id="btnTsv" class="ghost" disabled>İndir (TSV)</button>
             </div>
           </div>
 
           <div id="detail" class="detail">
-            <div class="muted">Soldan bir oyun seç.</div>
+            Soldan bir oyun seç.
           </div>
         </section>
       </div>
     </section>
 
     <!-- KİŞİLER -->
-    <section class="panel hidden" id="tab-people">
-      <h2>Kişiler</h2>
+    <section id="tab-kisiler" class="panel hidden">
       <div class="card">
-        <div class="muted">Bir sonraki adımda kişilere göre listeyi de bağlayacağız.</div>
+        <div class="cardTitle">Kişiler</div>
+        <div class="muted">Buraya kişiler ekranını sonra ekleyeceğiz.</div>
       </div>
     </section>
 
     <!-- GRAFİKLER -->
-    <section class="panel hidden" id="tab-charts">
-      <h2>Grafikler</h2>
+    <section id="tab-grafikler" class="panel hidden">
       <div class="card">
-        <div class="muted">Bir sonraki adımda grafikler (kişisayısı dikkate alan) eklenecek.</div>
+        <div class="cardTitle">Grafikler</div>
+        <div class="muted">Buraya grafikler ekranını sonra ekleyeceğiz.</div>
       </div>
     </section>
   </main>
 
-  <script src="./app.js"></script>
+  <!-- Bildirim Modal -->
+  <div id="notifModal" class="modal hidden">
+    <div class="modalBox">
+      <div class="modalHead">
+        <div class="cardTitle">Bildirimler</div>
+        <button id="btnCloseNotifs" class="ghost">Kapat</button>
+      </div>
+      <div id="notifList" class="notifList"></div>
+      <div class="modalFoot">
+        <button id="btnClearNotifs" class="ghost">Temizle</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
