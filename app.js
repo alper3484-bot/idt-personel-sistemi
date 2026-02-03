@@ -1,328 +1,396 @@
-// =====================
-// Google Sheets (GVIZ) Ayarları
-// =====================
-const SHEET_ID = "1sIzswZnMkyRPJejAsE_ylSKzAF0RmFiACP4jYtz-AE0";
-const GID_BUTUN_OYUNLAR = "1233566992"; // BÜTÜN OYUNLAR gid
+/***************
+ * CONFIG
+ ***************/
+const SPREADSHEET_ID = "1sIzswZnMkyRPJejAsE_ylSKzAF0RmFiACP4jYtz-AE0";
+const GID_BUTUN_OYUNLAR = 1233566992; // "BÜTÜN OYUNLAR"
 
-// =====================
-// DOM
-// =====================
-const el = (id) => document.getElementById(id);
+/***************
+ * HELPERS
+ ***************/
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => Array.from(document.querySelectorAll(s));
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-const statusEl = el("status");
-const gameListEl = el("gameList");
-const gameSearchEl = el("gameSearch");
-const detailEl = el("detail");
-const detailTitleEl = el("detailTitle");
-
-const btnRefresh = el("btnRefresh");
-const btnCopy = el("btnCopy");
-const btnDownload = el("btnDownload");
-const btnBack = el("btnBack");
-
-// Tabs
-document.querySelectorAll(".tab").forEach((b) => {
-  b.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
-    b.classList.add("active");
-
-    const tab = b.dataset.tab;
-    document.querySelectorAll(".panel").forEach(p => p.classList.add("hidden"));
-    el(`tab-${tab}`).classList.remove("hidden");
-  });
-});
-
-// =====================
-// State
-// =====================
-let rows = [];          // normalized rows: {oyun, kategori, gorev, kisi}
-let games = [];         // unique game names
-let selectedGame = null;
-
-// =====================
-// Utils
-// =====================
-function setStatus(msg, kind = "ok") {
-  statusEl.textContent = msg;
-  statusEl.classList.toggle("error", kind === "error");
-}
-
-function norm(s) {
-  return (s ?? "")
-    .toString()
+function norm(s){
+  return String(s ?? "")
     .trim()
-    .replace(/\s+/g, " ");
-}
-
-function normKey(s) {
-  return norm(s)
     .toLowerCase()
-    .replace(/[ıİ]/g, "i")
-    .replace(/[çÇ]/g, "c")
-    .replace(/[ğĞ]/g, "g")
-    .replace(/[öÖ]/g, "o")
-    .replace(/[şŞ]/g, "s")
-    .replace(/[üÜ]/g, "u");
+    .replaceAll("ı","i")
+    .replaceAll("İ","i");
 }
 
-function toTSV(list) {
-  const header = ["Oyun Adı", "Kategori", "Görev", "Kişi"];
-  const lines = [header.join("\t")];
-  for (const r of list) {
-    lines.push([r.oyun, r.kategori, r.gorev, r.kisi].map(v => (v ?? "")).join("\t"));
-  }
-  return lines.join("\n");
+function setStatus(msg){ $("#status").textContent = msg; }
+
+function tsvEscape(v){
+  const s = String(v ?? "");
+  return s.replace(/\r?\n/g, " ").replace(/\t/g, " ");
 }
 
-async function copyText(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    // fallback
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    ta.remove();
-    return true;
-  }
-}
-
-function downloadFile(filename, content) {
-  const blob = new Blob(["\ufeff" + content], { type: "text/tab-separated-values;charset=utf-8" });
+function downloadText(filename, text){
+  const blob = new Blob(["\ufeff" + text], {type:"text/tab-separated-values;charset=utf-8"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = filename;
   document.body.appendChild(a);
   a.click();
   a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
 }
 
-// =====================
-// GVIZ Fetch + Parse
-// =====================
-function gvizUrl(sheetId, gid) {
-  // tqx=out:json -> JSON wrapped in JS function
-  return `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?gid=${gid}&tqx=out:json`;
+/***************
+ * NOTIFICATIONS
+ ***************/
+const NOTIF_KEY = "idt_notifs_v1";
+const HASH_KEY  = "idt_hash_v1";
+
+function pushNotif(title, msg){
+  const arr = JSON.parse(localStorage.getItem(NOTIF_KEY) || "[]");
+  arr.unshift({t:Date.now(), title, msg});
+  localStorage.setItem(NOTIF_KEY, JSON.stringify(arr.slice(0,50)));
+  renderNotifs();
 }
 
-function parseGviz(text) {
-  const start = text.indexOf("(");
-  const end = text.lastIndexOf(")");
-  if (start === -1 || end === -1) throw new Error("GVIZ parse edilemedi.");
-  const json = JSON.parse(text.slice(start + 1, end));
-  return json;
-}
-
-function findColIndex(cols, wanted) {
-  // wanted: array of acceptable keys
-  // cols: [{label, id, type}, ...]
-  const keys = cols.map(c => normKey(c.label || c.id || ""));
-  for (let i = 0; i < keys.length; i++) {
-    for (const w of wanted) {
-      if (keys[i].includes(w)) return i;
-    }
+function renderNotifs(){
+  const box = $("#notifList");
+  const arr = JSON.parse(localStorage.getItem(NOTIF_KEY) || "[]");
+  const badge = $("#notifBadge");
+  if(arr.length){
+    badge.textContent = String(arr.length);
+    badge.classList.remove("hidden");
+  }else{
+    badge.classList.add("hidden");
   }
-  return -1;
+
+  if(!box) return;
+  if(!arr.length){
+    box.innerHTML = `<div class="muted">Henüz bildirim yok.</div>`;
+    return;
+  }
+
+  box.innerHTML = arr.map(n=>{
+    const when = new Date(n.t).toLocaleString("tr-TR");
+    return `
+      <div class="notif">
+        <div class="notifTitle">${escapeHtml(n.title)}</div>
+        <div>${escapeHtml(n.msg)}</div>
+        <div class="notifMeta">${when}</div>
+      </div>
+    `;
+  }).join("");
 }
 
-async function loadData() {
-  setStatus("Veri çekiliyor...");
-  selectedGame = null;
-  rows = [];
-  games = [];
-  renderGames();
-  renderDetail();
+function escapeHtml(s){
+  return String(s ?? "").replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[m]));
+}
 
-  const url = gvizUrl(SHEET_ID, GID_BUTUN_OYUNLAR);
+function openNotifs(){ $("#notifModal").classList.remove("hidden"); renderNotifs(); }
+function closeNotifs(){ $("#notifModal").classList.add("hidden"); }
+function clearNotifs(){
+  localStorage.removeItem(NOTIF_KEY);
+  renderNotifs();
+}
 
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Veri alınamadı. HTTP ${res.status}`);
+/***************
+ * DATA FETCH (GViz)
+ ***************/
+async function fetchGVizRows(gid){
+  // GViz endpoint (CORS sıkıntısı yaşamadan text alıp parse ediyoruz)
+  const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?gid=${gid}&tqx=out:json`;
+  const res = await fetch(url, {cache:"no-store"});
+  if(!res.ok) throw new Error(`Sheet erişilemedi (HTTP ${res.status})`);
   const txt = await res.text();
-  const g = parseGviz(txt);
 
-  const cols = g?.table?.cols || [];
-  const rws = g?.table?.rows || [];
+  // google.visualization.Query.setResponse({...});
+  const m = txt.match(/setResponse\(([\s\S]*?)\);\s*$/);
+  if(!m) throw new Error("GViz cevap formatı değişmiş görünüyor.");
+  const data = JSON.parse(m[1]);
 
-  // Sheet başlıkları: Oyun Adı / Kategori / Görev / Kişi
-  const idxOyun = findColIndex(cols, ["oyun adi", "oyunadi", "oyun"]);
-  const idxKat  = findColIndex(cols, ["kategori"]);
-  const idxGor  = findColIndex(cols, ["gorev"]);
-  const idxKisi = findColIndex(cols, ["kisi"]);
+  const table = data.table;
+  const cols = (table.cols || []).map(c => c.label || "");
+  const rows = (table.rows || []).map(r => (r.c || []).map(cell => (cell && cell.v != null) ? cell.v : ""));
 
-  if (idxOyun === -1) throw new Error("Oyun kolonu bulunamadı. Başlık 'Oyun Adı' olmalı.");
-  if (idxKat === -1)  throw new Error("Kategori kolonu bulunamadı.");
-  if (idxGor === -1)  throw new Error("Görev kolonu bulunamadı.");
-  if (idxKisi === -1) throw new Error("Kişi kolonu bulunamadı.");
+  // Bazı sheetlerde ilk satır header gibi gelebilir; biz zaten "label" var, ama label boşsa ilk satırı header kabul edelim.
+  const hasLabels = cols.some(c => String(c).trim() !== "");
+  if(hasLabels) return { headers: cols, rows };
 
-  const out = [];
-  for (const rr of rws) {
-    const c = rr.c || [];
-    const oyun = norm(c[idxOyun]?.v ?? c[idxOyun]?.f);
-    const kategori = norm(c[idxKat]?.v ?? c[idxKat]?.f);
-    const gorev = norm(c[idxGor]?.v ?? c[idxGor]?.f);
-    const kisi = norm(c[idxKisi]?.v ?? c[idxKisi]?.f);
-
-    if (!oyun && !kisi && !gorev && !kategori) continue;
-    if (!oyun) continue;
-
-    out.push({ oyun, kategori, gorev, kisi });
-  }
-
-  rows = out;
-
-  const set = new Set(rows.map(r => r.oyun).filter(Boolean));
-  games = Array.from(set).sort((a,b) => a.localeCompare(b, "tr"));
-
-  setStatus(`Yüklendi. (${games.length} oyun, ${rows.length} satır)`);
-  renderGames();
-  renderDetail();
+  // label yoksa ilk satır header say
+  const headers = rows[0] || [];
+  const body = rows.slice(1);
+  return { headers, rows: body };
 }
 
-// =====================
-// Render
-// =====================
-function renderGames() {
-  const q = norm(gameSearchEl.value);
-  const filtered = !q
-    ? games
-    : games.filter(g => normKey(g).includes(normKey(q)));
+/***************
+ * APP STATE
+ ***************/
+let RAW = [];         // full rows
+let games = [];       // unique game names
+let selectedGame = "";
+let lastTSV = "";     // selected export
+let lastRows = [];    // selected rows
 
-  gameListEl.innerHTML = "";
+function findHeaderIndex(headers, want){
+  const w = norm(want);
+  let i = headers.findIndex(h => norm(h) === w);
+  if(i >= 0) return i;
 
-  if (!filtered.length) {
-    gameListEl.innerHTML = `<div class="muted">Sonuç yok.</div>`;
+  // tolerans: contains
+  i = headers.findIndex(h => norm(h).includes(w));
+  return i;
+}
+
+function makeHash(headers, rows){
+  // basit hash/signature (değişiklik algılama için)
+  const s = JSON.stringify([headers, rows.slice(0,2000)]);
+  let h = 0;
+  for(let i=0;i<s.length;i++){
+    h = (h*31 + s.charCodeAt(i)) >>> 0;
+  }
+  return String(h);
+}
+
+/***************
+ * RENDER
+ ***************/
+function renderGameList(filter=""){
+  const box = $("#oyunList");
+  const f = norm(filter);
+  const list = games.filter(g => norm(g).includes(f));
+
+  if(!list.length){
+    box.innerHTML = `<div class="muted">Sonuç yok.</div>`;
     return;
   }
 
-  for (const g of filtered) {
-    const div = document.createElement("div");
-    div.className = "item" + (g === selectedGame ? " active" : "");
-    div.textContent = g;
-    div.addEventListener("click", () => selectGame(g));
-    gameListEl.appendChild(div);
-  }
+  box.innerHTML = list.map(g => `
+    <div class="item ${g===selectedGame?"active":""}" data-game="${escapeHtml(g)}">
+      ${escapeHtml(g)}
+    </div>
+  `).join("");
+
+  $$("#oyunList .item").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      selectGame(el.getAttribute("data-game"));
+    });
+  });
 }
 
-function renderDetail() {
-  if (!selectedGame) {
-    detailTitleEl.textContent = "Detay";
-    detailEl.innerHTML = `<div class="muted">Soldan bir oyun seç.</div>`;
-    btnCopy.disabled = true;
-    btnDownload.disabled = true;
+function renderDetail(game){
+  const box = $("#detail");
+  if(!game){
+    box.textContent = "Soldan bir oyun seç.";
+    $("#btnCopy").disabled = true;
+    $("#btnTsv").disabled = true;
     return;
   }
 
-  const list = rows.filter(r => r.oyun === selectedGame);
+  const rows = RAW.filter(r => r.game === game);
+  lastRows = rows;
 
-  detailTitleEl.textContent = selectedGame;
+  const tsv = [
+    ["Oyun Adı","Kategori","Görev","Kişi"].join("\t"),
+    ...rows.map(r => [r.game,r.category,r.role,r.person].map(tsvEscape).join("\t"))
+  ].join("\n");
+  lastTSV = tsv;
 
-  const html = `
+  $("#btnCopy").disabled = false;
+  $("#btnTsv").disabled = false;
+
+  box.innerHTML = `
+    <div class="muted">${escapeHtml(game)} — ${rows.length} satır</div>
     <table class="table">
       <thead>
-        <tr>
-          <th>Kategori</th>
-          <th>Görev</th>
-          <th>Kişi</th>
-        </tr>
+        <tr><th>Kategori</th><th>Görev</th><th>Kişi</th></tr>
       </thead>
       <tbody>
-        ${list.map(r => `
+        ${rows.map(r=>`
           <tr>
-            <td>${escapeHtml(r.kategori)}</td>
-            <td>${escapeHtml(r.gorev)}</td>
-            <td>${escapeHtml(r.kisi)}</td>
+            <td>${escapeHtml(r.category)}</td>
+            <td>${escapeHtml(r.role)}</td>
+            <td>${escapeHtml(r.person)}</td>
           </tr>
         `).join("")}
       </tbody>
     </table>
   `;
-  detailEl.innerHTML = html;
-
-  btnCopy.disabled = false;
-  btnDownload.disabled = false;
 }
 
-function escapeHtml(s) {
-  return (s ?? "").toString()
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
-}
+/***************
+ * MOBILE NAV (Back)
+ ***************/
+function updateMobileUI(){
+  const isMobile = window.matchMedia("(max-width: 980px)").matches;
+  const btnBack = $("#btnBack");
+  if(!isMobile){
+    btnBack.classList.add("hidden");
+    $("#leftPane").classList.remove("hidden");
+    return;
+  }
 
-// =====================
-// Selection + Mobile Back
-// =====================
-function selectGame(g) {
-  selectedGame = g;
-  renderGames();
-  renderDetail();
-
-  // mobil davranış: seçim yapınca detail öne çıksın + geri butonu
-  if (window.matchMedia("(max-width: 980px)").matches) {
+  if(selectedGame){
     btnBack.classList.remove("hidden");
-    // history state
-    history.pushState({ view: "game", game: g }, "", "#game");
-    document.getElementById("detailCard").scrollIntoView({ behavior: "smooth", block: "start" });
+    $("#leftPane").classList.add("hidden"); // oyuna girince list hide
+  }else{
+    btnBack.classList.add("hidden");
+    $("#leftPane").classList.remove("hidden");
   }
 }
 
-window.addEventListener("popstate", () => {
-  // geri basınca listeye dön
-  if (window.matchMedia("(max-width: 980px)").matches) {
-    if (!location.hash || location.hash === "#") {
-      btnBack.classList.add("hidden");
-      selectedGame = null;
-      renderGames();
-      renderDetail();
-      document.querySelector(".card").scrollIntoView({ behavior: "smooth", block: "start" });
+function selectGame(game){
+  selectedGame = game;
+  renderGameList($("#qOyun").value || "");
+  renderDetail(game);
+
+  // history state
+  history.pushState({game}, "", location.pathname + "#oyun=" + encodeURIComponent(game));
+  updateMobileUI();
+}
+
+/***************
+ * LOAD + PARSE
+ ***************/
+async function loadAll(){
+  setStatus("Veri çekiliyor...");
+  try{
+    const {headers, rows} = await fetchGVizRows(GID_BUTUN_OYUNLAR);
+
+    // Header eşleştirme (Senin sheette A1: Oyun Adı)
+    const iGame = findHeaderIndex(headers, "Oyun Adı");
+    const iCat  = findHeaderIndex(headers, "Kategori");
+    const iRole = findHeaderIndex(headers, "Görev");
+    const iPer  = findHeaderIndex(headers, "Kişi");
+
+    if(iGame < 0){
+      throw new Error(`Oyun kolonu bulunamadı. Başlık 'Oyun Adı' olmalı. (Mevcut başlıklar: ${headers.filter(Boolean).join(", ")})`);
     }
+    if(iPer < 0){
+      throw new Error(`Kişi kolonu bulunamadı. Başlık 'Kişi' olmalı.`);
+    }
+
+    // Normalize rows -> objects
+    RAW = rows
+      .map(r => ({
+        game: String(r[iGame] ?? "").trim(),
+        category: String(r[iCat] ?? "").trim(),
+        role: String(r[iRole] ?? "").trim(),
+        person: String(r[iPer] ?? "").trim(),
+      }))
+      .filter(x => x.game && x.person);
+
+    // oyun listesi
+    const set = new Set();
+    RAW.forEach(x => set.add(x.game));
+    games = Array.from(set).sort((a,b)=>a.localeCompare(b,"tr"));
+
+    // change detection
+    const h = makeHash(headers, rows);
+    const prev = localStorage.getItem(HASH_KEY);
+    if(prev && prev !== h){
+      pushNotif("Sheet değişti", "BÜTÜN OYUNLAR sayfasında yeni satır/değişiklik algılandı.");
+    }
+    localStorage.setItem(HASH_KEY, h);
+
+    renderGameList($("#qOyun").value || "");
+    renderDetail(selectedGame);
+    setStatus(`Yüklendi. Oyun: ${games.length} — Satır: ${RAW.length}`);
+
+  }catch(e){
+    console.error(e);
+    setStatus("Hata!");
+    $("#oyunList").innerHTML = `<div class="muted">Sonuç yok.</div>`;
+    $("#detail").textContent = "";
+    $("#detail").insertAdjacentHTML("afterbegin", `<div class="muted">HATA: ${e.message}</div>`);
   }
-});
+}
 
-btnBack.addEventListener("click", () => {
-  // listeye dön
-  btnBack.classList.add("hidden");
-  selectedGame = null;
-  renderGames();
-  renderDetail();
-  history.pushState({}, "", "#");
-});
+/***************
+ * TABS
+ ***************/
+function setupTabs(){
+  $$(".tab").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      $$(".tab").forEach(x=>x.classList.remove("active"));
+      btn.classList.add("active");
 
-// =====================
-// Actions
-// =====================
-gameSearchEl.addEventListener("input", renderGames);
+      const id = btn.dataset.tab;
+      $$(".panel").forEach(p=>p.classList.add("hidden"));
+      $("#"+id).classList.remove("hidden");
+    });
+  });
+}
 
-btnRefresh.addEventListener("click", async () => {
-  try { await loadData(); }
-  catch (e) { setStatus("HATA: " + e.message, "error"); }
-});
+/***************
+ * INIT
+ ***************/
+function init(){
+  setupTabs();
+  renderNotifs();
 
-btnCopy.addEventListener("click", async () => {
-  if (!selectedGame) return;
-  const list = rows.filter(r => r.oyun === selectedGame);
-  const tsv = toTSV(list);
-  await copyText(tsv);
-  setStatus("Kopyalandı (Excel'e yapıştırabilirsin).");
-});
+  $("#btnReload").addEventListener("click", loadAll);
 
-btnDownload.addEventListener("click", () => {
-  if (!selectedGame) return;
-  const list = rows.filter(r => r.oyun === selectedGame);
-  const tsv = toTSV(list);
-  const safe = selectedGame.replace(/[\\/:*?"<>|]+/g, "_");
-  downloadFile(`${safe}.tsv`, tsv);
-  setStatus("TSV indirildi.");
-});
+  $("#qOyun").addEventListener("input", (e)=>{
+    renderGameList(e.target.value || "");
+  });
 
-// İlk yükleme
-(async function init(){
-  try { await loadData(); }
-  catch (e) { setStatus("HATA: " + e.message, "error"); }
-})();
+  $("#btnCopy").addEventListener("click", async ()=>{
+    if(!lastTSV) return;
+    try{
+      await navigator.clipboard.writeText(lastTSV);
+      setStatus("Kopyalandı (Excel’e yapıştırabilirsin).");
+    }catch{
+      setStatus("Kopyalama engellendi. (Tarayıcı izin vermedi)");
+    }
+  });
+
+  $("#btnTsv").addEventListener("click", ()=>{
+    if(!lastTSV) return;
+    const name = (selectedGame ? selectedGame : "butun_oyunlar").replace(/[^\wığüşöçİĞÜŞÖÇ -]/gi,"").slice(0,80);
+    downloadText(`${name}.tsv`, lastTSV);
+  });
+
+  // notifications
+  $("#btnNotifs").addEventListener("click", openNotifs);
+  $("#btnCloseNotifs").addEventListener("click", closeNotifs);
+  $("#btnClearNotifs").addEventListener("click", clearNotifs);
+  $("#notifModal").addEventListener("click", (e)=>{
+    if(e.target.id === "notifModal") closeNotifs();
+  });
+
+  // mobile back
+  $("#btnBack").addEventListener("click", ()=>{
+    history.back();
+  });
+
+  window.addEventListener("popstate", ()=>{
+    // geri gelince oyunu kapat
+    const hash = location.hash || "";
+    const m = hash.match(/#oyun=(.*)$/);
+    if(m){
+      const g = decodeURIComponent(m[1]);
+      selectedGame = g;
+      renderGameList($("#qOyun").value || "");
+      renderDetail(g);
+    }else{
+      selectedGame = "";
+      renderGameList($("#qOyun").value || "");
+      renderDetail("");
+    }
+    updateMobileUI();
+  });
+
+  window.addEventListener("resize", updateMobileUI);
+
+  // load on start
+  loadAll().then(()=>{
+    // hash ile direkt oyun açma
+    const m = (location.hash||"").match(/#oyun=(.*)$/);
+    if(m){
+      const g = decodeURIComponent(m[1]);
+      if(g) selectGame(g);
+    }
+    updateMobileUI();
+  });
+}
+
+document.addEventListener("DOMContentLoaded", init);
