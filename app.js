@@ -4,51 +4,88 @@ const SHEET_URL =
 const oyunListesiDiv = document.getElementById("oyun-listesi");
 const durumDiv = document.getElementById("durum");
 
-fetch(SHEET_URL)
-  .then(res => res.text())
-  .then(html => {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
+function cellText(cell) {
+  return (cell?.innerText ?? "").replace(/\u00a0/g, " ").trim(); // nbsp temizle
+}
 
-    const rows = [...doc.querySelectorAll("table tr")];
+fetch(SHEET_URL, { cache: "no-store" })
+  .then((res) => res.text())
+  .then((html) => {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const table = doc.querySelector("table");
+    if (!table) {
+      durumDiv.innerText = "HATA: Yayınlanan sayfada tablo bulunamadı (link/gid yanlış olabilir).";
+      return;
+    }
+
+    const rows = [...table.querySelectorAll("tr")];
     if (rows.length < 2) {
       durumDiv.innerText = "HATA: Sheet boş görünüyor.";
       return;
     }
 
-    const headers = [...rows[0].querySelectorAll("td")]
-      .map(td => td.innerText.toLowerCase().trim());
+    // 1) Başlık satırını bul: ilk 10 satır içinde "oyun" geçen satırı ara
+    let headerRowIndex = -1;
+    let headers = [];
+    for (let i = 0; i < Math.min(10, rows.length); i++) {
+      const cells = [...rows[i].querySelectorAll("th, td")].map((c) => cellText(c).toLowerCase());
+      if (cells.some((t) => t.includes("oyun"))) {
+        headerRowIndex = i;
+        headers = cells;
+        break;
+      }
+    }
 
-    const oyunColIndex = headers.findIndex(h => h.includes("oyun"));
+    if (headerRowIndex === -1) {
+      durumDiv.innerText =
+        "HATA: Başlık satırında 'oyun' geçen bir sütun bulunamadı. (Başlık satırın ilk 10 satır içinde olmalı)";
+      return;
+    }
 
+    // 2) Google pubhtml bazen en sola satır numarası koyuyor: onu görmezden gelmek için index kaydırma
+    // headers içinde boş / sadece sayı olan ilk hücreyi kırp
+    // ama en garanti yol: her satırda aynı kolon sayısını baz alacağız.
+    const oyunColIndex = headers.findIndex((h) => h.includes("oyun"));
     if (oyunColIndex === -1) {
       durumDiv.innerText =
-        "HATA: Oyun kolonu bulunamadı. Sheet başlığında 'Oyun' geçen bir sütun olmalı.";
+        "HATA: Oyun kolonu bulunamadı. Başlık hücresinde 'Oyun' kelimesi geçmeli.";
       return;
     }
 
-    const oyunlar = rows
-      .slice(1)
-      .map(r => r.querySelectorAll("td")[oyunColIndex]?.innerText.trim())
-      .filter(Boolean);
+    // 3) Veri satırları: başlıktan sonraki satırlar
+    const dataRows = rows.slice(headerRowIndex + 1);
+
+    const oyunlar = [];
+    for (const r of dataRows) {
+      const cells = [...r.querySelectorAll("th, td")].map(cellText);
+
+      // tamamen boş satırı geç
+      if (cells.every((x) => !x)) continue;
+
+      const oyun = cells[oyunColIndex];
+      if (oyun) oyunlar.push(oyun);
+    }
 
     if (oyunlar.length === 0) {
-      durumDiv.innerText = "Oyun bulunamadı.";
+      durumDiv.innerText =
+        "HATA: Oyun verisi bulunamadı. (Oyun kolonunun altı boş olabilir ya da yanlış sayfaya bakıyor olabiliriz.)";
       return;
     }
 
-    durumDiv.remove();
+    // Aynı oyunları tekilleştir + sırala
+    const uniq = [...new Set(oyunlar)].sort((a, b) => a.localeCompare(b, "tr"));
 
+    durumDiv.remove();
     const ul = document.createElement("ul");
-    oyunlar.forEach(oyun => {
+    uniq.forEach((oyun) => {
       const li = document.createElement("li");
-      li.innerText = oyun;
+      li.textContent = oyun;
       ul.appendChild(li);
     });
-
+    oyunListesiDiv.innerHTML = "";
     oyunListesiDiv.appendChild(ul);
   })
-  .catch(err => {
+  .catch((err) => {
     console.error(err);
-    durumDiv.innerText = "HATA: Veri çekilemedi.";
+    durumDiv.innerText = "HATA: Veri çekilemedi (console’a bak).";
   });
