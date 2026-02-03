@@ -394,3 +394,129 @@ function init(){
 }
 
 document.addEventListener("DOMContentLoaded", init);
+/***************
+ * PEOPLE TAB
+ ***************/
+let persons = [];
+let selectedPerson = "";
+let lastPersonTSV = "";
+
+function buildPersons(){
+  const set = new Set();
+  RAW.forEach(r => set.add(r.person));
+  persons = Array.from(set).sort((a,b)=>a.localeCompare(b,"tr"));
+}
+
+function renderPersonList(filter=""){
+  const box = document.querySelector("#kisiList");
+  if(!box) return;
+
+  const f = norm(filter);
+  const list = persons.filter(p => norm(p).includes(f));
+
+  if(!list.length){
+    box.innerHTML = `<div class="muted">Sonuç yok.</div>`;
+    return;
+  }
+
+  box.innerHTML = list.map(p => `
+    <div class="item ${p===selectedPerson?"active":""}" data-person="${escapeHtml(p)}">
+      ${escapeHtml(p)}
+    </div>
+  `).join("");
+
+  document.querySelectorAll("#kisiList .item").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      selectPerson(el.getAttribute("data-person"));
+    });
+  });
+}
+
+function renderPersonDetail(person){
+  const box = document.querySelector("#personDetail");
+  if(!box) return;
+
+  if(!person){
+    box.textContent = "Soldan bir kişi seç.";
+    $("#btnCopyPerson").disabled = true;
+    $("#btnTsvPerson").disabled = true;
+    return;
+  }
+
+  const rows = RAW.filter(r => r.person === person);
+
+  // TSV
+  lastPersonTSV = [
+    ["Kişi","Oyun Adı","Kategori","Görev"].join("\t"),
+    ...rows.map(r => [person, r.game, r.category, r.role].map(tsvEscape).join("\t"))
+  ].join("\n");
+
+  $("#btnCopyPerson").disabled = false;
+  $("#btnTsvPerson").disabled = false;
+
+  // Oyunlara göre grupla
+  const byGame = new Map();
+  rows.forEach(r=>{
+    if(!byGame.has(r.game)) byGame.set(r.game, []);
+    byGame.get(r.game).push(r);
+  });
+
+  const gamesHtml = Array.from(byGame.entries())
+    .sort((a,b)=>a[0].localeCompare(b[0],"tr"))
+    .map(([g, arr]) => `
+      <div style="margin-top:14px;">
+        <div class="cardTitle" style="margin:0 0 6px;">${escapeHtml(g)}</div>
+        <table class="table">
+          <thead><tr><th>Kategori</th><th>Görev</th></tr></thead>
+          <tbody>
+            ${arr.map(r=>`
+              <tr>
+                <td>${escapeHtml(r.category)}</td>
+                <td>${escapeHtml(r.role)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    `).join("");
+
+  box.innerHTML = `
+    <div class="muted">${escapeHtml(person)} — ${rows.length} satır</div>
+    ${gamesHtml}
+  `;
+}
+
+function selectPerson(person){
+  selectedPerson = person;
+  renderPersonList($("#qKisi").value || "");
+  renderPersonDetail(person);
+}
+
+function setupPeopleUI(){
+  const q = document.querySelector("#qKisi");
+  if(q){
+    q.addEventListener("input", (e)=> renderPersonList(e.target.value || ""));
+  }
+
+  const btnCopy = document.querySelector("#btnCopyPerson");
+  if(btnCopy){
+    btnCopy.addEventListener("click", async ()=>{
+      if(!lastPersonTSV) return;
+      try{
+        await navigator.clipboard.writeText(lastPersonTSV);
+        setStatus("Kopyalandı (Excel’e yapıştırabilirsin).");
+      }catch{
+        setStatus("Kopyalama engellendi. (Tarayıcı izin vermedi)");
+      }
+    });
+  }
+
+  const btnTsv = document.querySelector("#btnTsvPerson");
+  if(btnTsv){
+    btnTsv.addEventListener("click", ()=>{
+      if(!lastPersonTSV) return;
+      const name = (selectedPerson || "kisi").replace(/[^\wığüşöçİĞÜŞÖÇ -]/gi,"").slice(0,80);
+      downloadText(`${name}.tsv`, lastPersonTSV);
+    });
+  }
+}
