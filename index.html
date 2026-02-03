@@ -2,42 +2,51 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <title>IDT Personel Sistemi</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
+  <title>IDT Personel Sistemi</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
   <h1>IDT Personel Sistemi</h1>
 
-  <nav>
-    <button class="active" onclick="showTab('oyunlar', this)">Oyunlar</button>
-    <button onclick="showTab('kisiler', this)">Kişiler</button>
-    <button onclick="showTab('grafikler', this)">Grafikler</button>
+  <nav class="tabs">
+    <button class="tab active" data-tab="oyunlar">Oyunlar</button>
+    <button class="tab" data-tab="kisiler">Kişiler</button>
+    <button class="tab" data-tab="grafikler">Grafikler</button>
   </nav>
 
   <main>
-    <!-- OYUNLAR -->
-    <div id="oyunlar" class="box">
+    <section id="oyunlar" class="box">
       <h2>Oyunlar</h2>
-      <ul id="oyunList"></ul>
-    </div>
+      <div id="oyun-listesi" class="list">Buraya oyun listesi gelecek.</div>
+    </section>
 
-    <!-- KİŞİLER -->
-    <div id="kisiler" class="box hidden">
+    <section id="kisiler" class="box hidden">
       <h2>Kişiler</h2>
-      <p>Yakında eklenecek.</p>
-    </div>
+      <p>Buraya kişiler listesi gelecek.</p>
+    </section>
 
-    <!-- GRAFİKLER -->
-    <div id="grafikler" class="box hidden">
+    <section id="grafikler" class="box hidden">
       <h2>Grafikler</h2>
-      <p>Yakında eklenecek.</p>
-    </div>
+      <p>Buraya grafikler gelecek.</p>
+    </section>
+
+    <p id="durum" class="status"></p>
   </main>
 
-  <div id="status" class="status"></div>
+  <script>
+    // Basit sekme sistemi
+    document.querySelectorAll(".tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const id = btn.dataset.tab;
+        document.querySelectorAll("main .box").forEach(box => box.classList.add("hidden"));
+        document.getElementById(id).classList.remove("hidden");
+      });
+    });
+  </script>
 
   <script src="app.js"></script>
 </body>
