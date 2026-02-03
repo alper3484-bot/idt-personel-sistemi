@@ -5,41 +5,40 @@
   <title>IDT Personel Sistemi</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- CSS BAĞLANTISI -->
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
 
   <h1>IDT Personel Sistemi</h1>
 
   <nav>
-    <button onclick="showTab('oyunlar', event)" class="active">Oyunlar</button>
-    <button onclick="showTab('kisiler', event)">Kişiler</button>
-    <button onclick="showTab('grafikler', event)">Grafikler</button>
+    <button class="active" onclick="showTab('oyunlar', this)">Oyunlar</button>
+    <button onclick="showTab('kisiler', this)">Kişiler</button>
+    <button onclick="showTab('grafikler', this)">Grafikler</button>
   </nav>
 
   <main>
-    <section id="oyunlar" class="box">
+    <!-- OYUNLAR -->
+    <div id="oyunlar" class="box">
       <h2>Oyunlar</h2>
-      <p>Buraya oyun listesi gelecek.</p>
-    </section>
+      <ul id="oyunList"></ul>
+    </div>
 
-    <section id="kisiler" class="box hidden">
+    <!-- KİŞİLER -->
+    <div id="kisiler" class="box hidden">
       <h2>Kişiler</h2>
-      <p>Buraya personel listesi gelecek.</p>
-    </section>
+      <p>Yakında eklenecek.</p>
+    </div>
 
-    <section id="grafikler" class="box hidden">
+    <!-- GRAFİKLER -->
+    <div id="grafikler" class="box hidden">
       <h2>Grafikler</h2>
-      <p>Buraya grafikler gelecek.</p>
-    </section>
+      <p>Yakında eklenecek.</p>
+    </div>
   </main>
 
-  <!-- JS BAĞLANTISI (EN ALTA!) -->
+  <div id="status" class="status"></div>
+
   <script src="app.js"></script>
 </body>
 </html>
-<p id="status">Hazır.</p>
-<ul id="oyunList"></ul>
-<script src="app.js"></script>
