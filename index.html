@@ -1,52 +1,67 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>IDT Personel Sistemi</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>IDT Personel Sistemi</h1>
+  <header class="top">
+    <h1>IDT Personel Sistemi</h1>
 
-  <nav class="tabs">
-    <button class="tab active" data-tab="oyunlar">Oyunlar</button>
-    <button class="tab" data-tab="kisiler">Kişiler</button>
-    <button class="tab" data-tab="grafikler">Grafikler</button>
-  </nav>
+    <nav class="tabs">
+      <button class="tab active" data-tab="oyunlar">Oyunlar</button>
+      <button class="tab" data-tab="kisiler">Kişiler</button>
+      <button class="tab" data-tab="grafikler">Grafikler</button>
+    </nav>
+  </header>
 
-  <main>
-    <section id="oyunlar" class="box">
-      <h2>Oyunlar</h2>
-      <div id="oyun-listesi" class="list">Buraya oyun listesi gelecek.</div>
+  <main class="wrap">
+    <section id="oyunlar" class="panel">
+      <div class="panelHead">
+        <h2>Oyunlar</h2>
+        <div class="rightTools">
+          <button id="btnReload" class="btn">Yenile</button>
+        </div>
+      </div>
+
+      <p id="status" class="status">Veri çekiliyor...</p>
+
+      <div class="grid">
+        <div class="card">
+          <h3>Oyun Listesi</h3>
+          <input id="gameSearch" class="input" placeholder="Oyun ara..." />
+          <div id="gamesList" class="list"></div>
+        </div>
+
+        <div class="card">
+          <h3 id="detailTitle">Detay</h3>
+          <div class="toolsRow">
+            <button id="btnCopy" class="btn">Kopyala (Excel)</button>
+            <button id="btnDownload" class="btn">İndir (TSV)</button>
+          </div>
+          <div id="gameDetail" class="detail">
+            <div class="empty">Soldan bir oyun seç.</div>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <section id="kisiler" class="box hidden">
+    <section id="kisiler" class="panel hidden">
       <h2>Kişiler</h2>
-      <p>Buraya kişiler listesi gelecek.</p>
+      <div class="card">
+        <p>Şimdilik oyun detayından kişi listesi geliyor. Sonraki adımda burayı full yaparız.</p>
+      </div>
     </section>
 
-    <section id="grafikler" class="box hidden">
+    <section id="grafikler" class="panel hidden">
       <h2>Grafikler</h2>
-      <p>Buraya grafikler gelecek.</p>
+      <div class="card">
+        <p>Grafikleri sonraki adımda ekleyelim (önce veri çekme %100 otursun).</p>
+      </div>
     </section>
-
-    <p id="durum" class="status"></p>
   </main>
-
-  <script>
-    // Basit sekme sistemi
-    document.querySelectorAll(".tab").forEach(btn => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-
-        const id = btn.dataset.tab;
-        document.querySelectorAll("main .box").forEach(box => box.classList.add("hidden"));
-        document.getElementById(id).classList.remove("hidden");
-      });
-    });
-  </script>
 
   <script src="app.js"></script>
 </body>
