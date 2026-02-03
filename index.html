@@ -57,13 +57,36 @@
       </div>
     </section>
 
-    <!-- KİŞİLER -->
-    <section id="tab-kisiler" class="panel hidden">
-      <div class="card">
-        <div class="cardTitle">Kişiler</div>
-        <div class="muted">Buraya kişiler ekranını sonra ekleyeceğiz.</div>
+   <!-- KİŞİLER -->
+<section id="tab-kisiler" class="panel hidden">
+  <div class="panelHead">
+    <h2>Kişiler</h2>
+    <div class="status muted">Aynı sheetten üretilir.</div>
+  </div>
+
+  <div class="grid">
+    <aside class="card listCard" id="leftPanePeople">
+      <div class="cardTitle">Kişi Listesi</div>
+      <input id="qKisi" class="input" placeholder="Kişi ara..." />
+      <div id="kisiList" class="list"></div>
+    </aside>
+
+    <section class="card detailCard" id="rightPanePeople">
+      <div class="detailTop">
+        <div class="cardTitle">Detay</div>
+        <div class="detailBtns">
+          <button id="btnCopyPerson" class="ghost" disabled>Kopyala (Excel)</button>
+          <button id="btnTsvPerson" class="ghost" disabled>İndir (TSV)</button>
+        </div>
+      </div>
+
+      <div id="personDetail" class="detail">
+        Soldan bir kişi seç.
       </div>
     </section>
+  </div>
+</section>
+
 
     <!-- GRAFİKLER -->
     <section id="tab-grafikler" class="panel hidden">
